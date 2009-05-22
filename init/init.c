@@ -801,8 +801,12 @@ int main(int argc, char **argv)
 
     act.sa_handler = sigchld_handler;
     act.sa_flags = SA_NOCLDSTOP;
+#ifdef __mips__
+    sigemptyset(&act.sa_mask);
+#else
     act.sa_mask = 0;
     act.sa_restorer = NULL;
+#endif
     sigaction(SIGCHLD, &act, 0);
 
     /* clear the umask */
