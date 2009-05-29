@@ -26,7 +26,7 @@
 #include "mmc.h"
 #include "media.h"
 
-#define DEBUG_BOOTSTRAP 0
+#define DEBUG_BOOTSTRAP 1
 
 static int mmc_bootstrap_controller(char *sysfs_path);
 static int mmc_bootstrap_card(char *sysfs_path);
@@ -42,6 +42,7 @@ int mmc_bootstrap()
     DIR *d;
     struct dirent *de;
 
+#ifndef __mips__	/* This should be PRODUCT_HMP10 */
     if (!(d = opendir(SYSFS_CLASS_MMC_PATH))) {
         LOG_ERROR("Unable to open '%s' (%s)", SYSFS_CLASS_MMC_PATH,
                   strerror(errno));
@@ -62,6 +63,14 @@ int mmc_bootstrap()
     }
 
     closedir(d);
+#else
+        char tmp[255];
+
+	strcpy(tmp, "/sys/block/sdb");
+
+        if (mmc_bootstrap_controller(tmp))
+            LOG_ERROR("Error bootstrapping controller '%s' (%m)", tmp);
+#endif
 
     return 0;
 }
@@ -85,6 +94,7 @@ static int mmc_bootstrap_controller(char *sysfs_path)
         if (de->d_name[0] == '.')
             continue;
 
+#ifndef __mips__	/* This should be PRODUCT_HMP10 */
         if ((!strcmp(de->d_name, "uevent")) ||
             (!strcmp(de->d_name, "subsystem")) ||
             (!strcmp(de->d_name, "device")) ||
@@ -92,6 +102,10 @@ static int mmc_bootstrap_controller(char *sysfs_path)
             (!strcmp(de->d_name, "slot_name"))) {
             continue;
         }
+#else
+        if (strcmp(de->d_name, "device") != 0)
+	    continue;
+#endif
 
         sprintf(tmp, "%s/%s", sysfs_path, de->d_name);
 
@@ -149,14 +163,22 @@ static int mmc_bootstrap_card(char *sysfs_path)
     sprintf(tmp, "DEVPATH=%s", devpath);
     uevent_params[0] = (char *) strdup(tmp);
 
+#ifndef __mips__	/* This should be PRODUCT_HMP10 */
     sprintf(filename, "/sys%s/type", devpath);
     p = read_file(filename, &sz);
     p[strlen(p) - 1] = '\0';
     sprintf(tmp, "MMC_TYPE=%s", p);
     free(p);
+#else
+    sprintf(tmp, "MMC_TYPE=MMC");
+#endif
     uevent_params[1] = (char *) strdup(tmp);
 
+#ifndef __mips__	/* This should be PRODUCT_HMP10 */
     sprintf(filename, "/sys%s/name", devpath);
+#else
+    sprintf(filename, "/sys%s/vendor", devpath);
+#endif
     p = read_file(filename, &sz);
     p[strlen(p) - 1] = '\0';
     sprintf(tmp, "MMC_NAME=%s", p);
@@ -236,11 +258,19 @@ static int mmc_bootstrap_mmcblk(char *devpath)
 
     for (part_no = 0; part_no < 4; part_no++) {
         char part_file[255];
+#ifndef __mips__
         sprintf(part_file, "/sys%s/%sp%d", devpath, mmcblk_devname, part_no);
+#else
+        sprintf(part_file, "/sys%s/%s%d", devpath, mmcblk_devname, part_no);
+#endif
         if (!access(part_file, F_OK)) {
             char part_devpath[255];
 
+#ifndef __mips__
             sprintf(part_devpath, "%s/%sp%d", devpath, mmcblk_devname, part_no);
+#else
+            sprintf(part_devpath, "%s/%s%d", devpath, mmcblk_devname, part_no);
+#endif
             if (mmc_bootstrap_mmcblk_partition(part_devpath)) 
                 LOGE("Error bootstrapping mmcblk partition '%s'", part_devpath);
         }

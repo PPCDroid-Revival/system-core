@@ -114,8 +114,11 @@ int main(int argc, char **argv)
     // Volume Manager
     volmgr_bootstrap();
 
+//#ifndef __mips__	/* This should be PRODUCT_HMP10 */
+#if 1
     // SD Card system
     mmc_bootstrap();
+#endif
 
     // USB Mass Storage
     ums_bootstrap();
@@ -156,6 +159,7 @@ int main(int argc, char **argv)
             sleep(1);
             continue;
         }
+LOGI("select rc %d\n", rc);
 
         if (!rc) {
             continue;

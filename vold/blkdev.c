@@ -83,6 +83,7 @@ int blkdev_refresh(blkdev_t *blk)
      * Open the disk partition table
      */
     devpath = blkdev_get_devpath(blk->disk);
+LOG_VOL("blkdev_refresh: devpath %s\n", devpath);
     if ((fd = open(devpath, O_RDONLY)) < 0) {
         LOGE("Unable to open device '%s' (%s)", devpath,
              strerror(errno));
@@ -103,6 +104,7 @@ int blkdev_refresh(blkdev_t *blk)
      * a partition so get the partition type
      */
 
+LOG_VOL("blkdev_refresh: blk type %d\n", blk->type);
     if (blk->type == blkdev_disk) {
         blk->nr_parts = 0;
 
@@ -132,7 +134,11 @@ int blkdev_refresh(blkdev_t *blk)
         }
     } else if (blk->type == blkdev_partition) {
         struct dos_partition part;
+#ifndef __mips__
         int part_no = blk->minor -1;
+#else
+        int part_no = (blk->minor & 0x0f) -1;
+#endif
 
         if (part_no < 4) {
             dos_partition_dec(block + DOSPARTOFF + part_no * sizeof(struct dos_partition), &part);
@@ -285,7 +291,11 @@ blkdev_t *blkdev_lookup_by_devno(int maj, int min)
 
     while (list_scan) {
         if ((list_scan->dev->major == maj) &&
+#ifndef __mips__
             (list_scan->dev->minor == min))
+#else
+            ((list_scan->dev->minor & 0x0f) == (min & 0x0f)))
+#endif
             return list_scan->dev;
         list_scan = list_scan->next;
     }

@@ -45,6 +45,11 @@ int vfat_check(blkdev_t *dev)
     LOG_VOL("vfat_check(%d:%d):", dev->major, dev->minor);
 #endif
 
+#ifdef __mips__
+    LOGE("vfat_check(%d:%d): %s not found (skipping checks)",
+         dev->major, dev->minor, FSCK_MSDOS_PATH);
+    return 0;
+#endif
     if (access(FSCK_MSDOS_PATH, X_OK)) {
         LOGE("vfat_check(%d:%d): %s not found (skipping checks)",
              dev->major, dev->minor, FSCK_MSDOS_PATH);
