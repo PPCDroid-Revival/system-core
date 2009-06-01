@@ -62,6 +62,9 @@ int main(int argc, char **argv)
     struct sockaddr_nl nladdr;
     int uevent_sz = 64 * 1024;
 
+#ifdef __mips__
+	sleep(5);	/* Wait for the HMP SD/USB to initialize */
+#endif
     LOGI("Android Volume Daemon version %d.%d", ver_major, ver_minor);
 
     /*
@@ -114,11 +117,8 @@ int main(int argc, char **argv)
     // Volume Manager
     volmgr_bootstrap();
 
-//#ifndef __mips__	/* This should be PRODUCT_HMP10 */
-#if 1
     // SD Card system
     mmc_bootstrap();
-#endif
 
     // USB Mass Storage
     ums_bootstrap();
@@ -159,7 +159,6 @@ int main(int argc, char **argv)
             sleep(1);
             continue;
         }
-LOGI("select rc %d\n", rc);
 
         if (!rc) {
             continue;
