@@ -413,7 +413,7 @@ static int handle_mmc_event(struct uevent *event)
             return 0;
         
 LOGI("handle_mmc_event: path %s\n", event->path);
-#ifndef __mips__
+#ifndef BOARD_USES_HMP_VOLD_HACK
         read_sysfs_var(serial, sizeof(serial), event->path, "serial");
 #else
         read_sysfs_var(serial, sizeof(serial), event->path, "rev");

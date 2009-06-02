@@ -45,7 +45,7 @@ int vfat_check(blkdev_t *dev)
     LOG_VOL("vfat_check(%d:%d):", dev->major, dev->minor);
 #endif
 
-#ifdef __mips__
+#ifdef BOARD_USES_HMP_VOLD_HACK
     LOGE("vfat_check(%d:%d): %s not found (skipping checks)",
          dev->major, dev->minor, FSCK_MSDOS_PATH);
     return 0;
