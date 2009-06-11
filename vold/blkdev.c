@@ -291,7 +291,7 @@ blkdev_t *blkdev_lookup_by_devno(int maj, int min)
 
     while (list_scan) {
         if ((list_scan->dev->major == maj) &&
-#ifndef USE_HMP_VOLD_HACK
+#ifndef BOARD_USES_HMP_VOLD_HACK
             (list_scan->dev->minor == min))
 #else
             ((list_scan->dev->minor & 0x0f) == (min & 0x0f)))
