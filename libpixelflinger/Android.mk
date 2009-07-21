@@ -43,6 +43,10 @@ ifeq ($(TARGET_ARCH),arm)
 PIXELFLINGER_SRC_FILES += t32cb16blend.S
 endif
 
+ifeq ($(TARGET_ARCH),mips)
+PIXELFLINGER_SRC_FILES += mips_accel.S
+endif
+
 ifeq ($(TARGET_ARCH),arm)
 # special optimization flags for pixelflinger
 PIXELFLINGER_CFLAGS += -fstrict-aliasing -fomit-frame-pointer

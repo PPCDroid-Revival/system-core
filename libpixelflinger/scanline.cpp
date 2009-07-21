@@ -103,6 +103,41 @@ struct shortcut_t {
     void            (*init_y)(context_t*, int32_t);
 };
 
+#if defined(__mips__)
+extern "C" void scanline_mips_accel1(context_t* c);
+extern "C" void scanline_mips_accel2(context_t* c);
+extern "C" void scanline_mips_accel3(context_t* c);
+extern "C" void scanline_mips_accel4(context_t* c);
+extern "C" void scanline_mips_accel5(context_t* c);
+extern "C" void scanline_mips_accel6(context_t* c);
+extern "C" void scanline_mips_accel7(context_t* c);
+static shortcut_t mips_accels[] = {
+    { { { 0x03545404, 0x00000077, { 0x00000A01, 0x00000000 } },
+        { 0xFFFFFFFF, 0xFFFFFFFF, { 0xFFFFFFFF, 0xFFFFFFFF } } },
+        "mips_accel1", scanline_mips_accel1, init_y_noop },
+    { { { 0x03545404, 0x00000077, { 0x00000A04, 0x00000000 } },
+        { 0xFFFFFFFF, 0xFFFFFFFF, { 0xFFFFFFFF, 0xFFFFFFFF } } },
+        "mips_accel2", scanline_mips_accel2, init_y_noop },
+    { { { 0x03010104, 0x00000077, { 0x00000004, 0x00000000 } },
+        { 0xFFFFFFFF, 0xFFFFFFFF, { 0xFFFFFFFF, 0xFFFFFFFF } } },
+        "mips_accel3", scanline_mips_accel3, init_y_noop },
+    { { { 0x03545404, 0x00000077, { 0x00000004, 0x00000000 } },
+        { 0xFFFFFFFF, 0xFFFFFFFF, { 0xFFFFFFFF, 0xFFFFFFFF } } },
+        "mips_accel4", scanline_mips_accel4, init_y_noop },
+    { { { 0x03515104, 0x00000077, { 0x00001a01, 0x00000000 } },
+        { 0xFFFFFFFF, 0xFFFFFFFF, { 0xFFFFFFFF, 0xFFFFFFFF } } },
+        "mips_accel5", scanline_mips_accel5, init_y_noop },
+#if 0	/* Only saw this once, can't make it happen again for testing. */
+    { { { 0x03515104, 0x00000177, { 0x00000a01, 0x00000000 } },
+        { 0xFFFFFFFF, 0xFFFFFFFF, { 0xFFFFFFFF, 0xFFFFFFFF } } },
+        "mips_accel6", scanline_mips_accel6, init_y_noop },
+#endif
+    { { { 0x03010104, 0x00000097, { 0x00000000, 0x00000000 } },
+        { 0xFFFFFFFF, 0xFFFFFFFF, { 0xFFFFFFFF, 0xFFFFFFFF } } },
+        "mips_accel7", scanline_mips_accel7, init_y_noop },
+};
+#endif /* __mips__ */
+
 // Keep in sync with needs
 static shortcut_t shortcuts[] = {
     { { { 0x03515104, 0x00000077, { 0x00000A01, 0x00000000 } },
@@ -227,6 +262,18 @@ static void pick_scanline(context_t* c)
         case 4: c->scanline = scanline_memset32; return;
         }
     }
+
+#if defined(__mips__)
+    const int numMipsAccels = sizeof(mips_accels)/sizeof(shortcut_t);
+    for (int i=0 ; i<numMipsAccels ; i++) {
+        if (c->state.needs.match(mips_accels[i].filter)) {
+            c->scanline = mips_accels[i].scanline;
+	    c->init_y = init_y;
+	    c->step_y = step_y__generic;
+            return;
+        }
+    }
+#endif /* __mips__ */
 
     const int numFilters = sizeof(shortcuts)/sizeof(shortcut_t);
     for (int i=0 ; i<numFilters ; i++) {
