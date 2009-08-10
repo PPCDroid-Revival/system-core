@@ -17,6 +17,8 @@ endif
 #
 
 include $(CLEAR_VARS)
+
+ifeq ($(TARGET_ARCH),arm)
 PIXELFLINGER_SRC_FILES:= \
     codeflinger/ARMAssemblerInterface.cpp \
     codeflinger/ARMAssemblerProxy.cpp \
@@ -26,7 +28,22 @@ PIXELFLINGER_SRC_FILES:= \
     codeflinger/load_store.cpp \
     codeflinger/blending.cpp \
     codeflinger/texturing.cpp \
-    codeflinger/disassem.c \
+    codeflinger/disassem.c
+endif
+ifeq ($(TARGET_ARCH),mips)
+PIXELFLINGER_SRC_FILES:= \
+    codeflinger-mips/MIPSAssemblerInterface.cpp \
+    codeflinger-mips/MIPSAssemblerProxy.cpp \
+    codeflinger-mips/MIPSAssembler.cpp \
+    codeflinger-mips/CodeCache.cpp \
+    codeflinger-mips/GGLAssembler.cpp \
+    codeflinger-mips/load_store.cpp \
+    codeflinger-mips/blending.cpp \
+    codeflinger-mips/texturing.cpp \
+    codeflinger-mips/disassem.c
+endif
+
+PIXELFLINGER_SRC_FILES += \
 	tinyutils/SharedBuffer.cpp \
 	tinyutils/VectorImpl.cpp \
 	fixed.cpp.arm \
@@ -41,10 +58,6 @@ PIXELFLINGER_SRC_FILES:= \
 
 ifeq ($(TARGET_ARCH),arm)
 PIXELFLINGER_SRC_FILES += t32cb16blend.S
-endif
-
-ifeq ($(TARGET_ARCH),mips)
-PIXELFLINGER_SRC_FILES += mips_accel.S
 endif
 
 ifeq ($(TARGET_ARCH),arm)

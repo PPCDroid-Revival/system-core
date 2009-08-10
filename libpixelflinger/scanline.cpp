@@ -29,10 +29,17 @@
 #include "buffer.h"
 #include "scanline.h"
 
+#if defined(__arm__)
 #include "codeflinger/CodeCache.h"
 #include "codeflinger/GGLAssembler.h"
 #include "codeflinger/ARMAssembler.h"
 //#include "codeflinger/ARMAssemblerOptimizer.h"
+#endif
+#if defined(__mips__)
+#include "codeflinger-mips/CodeCache.h"
+#include "codeflinger-mips/GGLAssembler.h"
+#include "codeflinger-mips/MIPSAssembler.h"
+#endif
 
 // ----------------------------------------------------------------------------
 
@@ -57,6 +64,12 @@
 
 #define DEBUG__CODEGEN_ONLY     0
 
+//---
+#undef ANDROID_ARM_CODEGEN
+#define ANDROID_ARM_CODEGEN 1
+#undef ANDROID_CODEGEN
+#define ANDROID_CODEGEN ANDROID_CODEGEN_ASM
+//---
 
 #define ASSEMBLY_SCRATCH_SIZE   2048
 
@@ -102,41 +115,6 @@ struct shortcut_t {
     void            (*scanline)(context_t*);
     void            (*init_y)(context_t*, int32_t);
 };
-
-#if defined(__mips__)
-extern "C" void scanline_mips_accel1(context_t* c);
-extern "C" void scanline_mips_accel2(context_t* c);
-extern "C" void scanline_mips_accel3(context_t* c);
-extern "C" void scanline_mips_accel4(context_t* c);
-extern "C" void scanline_mips_accel5(context_t* c);
-extern "C" void scanline_mips_accel6(context_t* c);
-extern "C" void scanline_mips_accel7(context_t* c);
-static shortcut_t mips_accels[] = {
-    { { { 0x03545404, 0x00000077, { 0x00000A01, 0x00000000 } },
-        { 0xFFFFFFFF, 0xFFFFFFFF, { 0xFFFFFFFF, 0xFFFFFFFF } } },
-        "mips_accel1", scanline_mips_accel1, init_y_noop },
-    { { { 0x03545404, 0x00000077, { 0x00000A04, 0x00000000 } },
-        { 0xFFFFFFFF, 0xFFFFFFFF, { 0xFFFFFFFF, 0xFFFFFFFF } } },
-        "mips_accel2", scanline_mips_accel2, init_y_noop },
-    { { { 0x03010104, 0x00000077, { 0x00000004, 0x00000000 } },
-        { 0xFFFFFFFF, 0xFFFFFFFF, { 0xFFFFFFFF, 0xFFFFFFFF } } },
-        "mips_accel3", scanline_mips_accel3, init_y_noop },
-    { { { 0x03545404, 0x00000077, { 0x00000004, 0x00000000 } },
-        { 0xFFFFFFFF, 0xFFFFFFFF, { 0xFFFFFFFF, 0xFFFFFFFF } } },
-        "mips_accel4", scanline_mips_accel4, init_y_noop },
-    { { { 0x03515104, 0x00000077, { 0x00001a01, 0x00000000 } },
-        { 0xFFFFFFFF, 0xFFFFFFFF, { 0xFFFFFFFF, 0xFFFFFFFF } } },
-        "mips_accel5", scanline_mips_accel5, init_y_noop },
-#if 0	/* Only saw this once, can't make it happen again for testing. */
-    { { { 0x03515104, 0x00000177, { 0x00000a01, 0x00000000 } },
-        { 0xFFFFFFFF, 0xFFFFFFFF, { 0xFFFFFFFF, 0xFFFFFFFF } } },
-        "mips_accel6", scanline_mips_accel6, init_y_noop },
-#endif
-    { { { 0x03010104, 0x00000097, { 0x00000000, 0x00000000 } },
-        { 0xFFFFFFFF, 0xFFFFFFFF, { 0xFFFFFFFF, 0xFFFFFFFF } } },
-        "mips_accel7", scanline_mips_accel7, init_y_noop },
-};
-#endif /* __mips__ */
 
 // Keep in sync with needs
 static shortcut_t shortcuts[] = {
@@ -184,7 +162,13 @@ static  const needs_filter_t fill16noblend = {
 // ----------------------------------------------------------------------------
 
 #if ANDROID_ARM_CODEGEN
+#if defined(__mips__)
+// Code on MIPS isn't that much bigger, I just wanted to cache more of
+// it since we are running more complex and larger systems.
+static CodeCache gCodeCache(24 * 1024);
+#else
 static CodeCache gCodeCache(12 * 1024);
+#endif
 
 class ScanlineAssembly : public Assembly {
     AssemblyKey<needs_t> mKey;
@@ -226,7 +210,6 @@ static void pick_scanline(context_t* c)
     c->scanline = scanline;
     return;
 #endif
-
     //printf("*** needs [%08lx:%08lx:%08lx:%08lx]\n",
     //    c->state.needs.n, c->state.needs.p,
     //    c->state.needs.t[0], c->state.needs.t[1]);
@@ -263,18 +246,6 @@ static void pick_scanline(context_t* c)
         }
     }
 
-#if defined(__mips__)
-    const int numMipsAccels = sizeof(mips_accels)/sizeof(shortcut_t);
-    for (int i=0 ; i<numMipsAccels ; i++) {
-        if (c->state.needs.match(mips_accels[i].filter)) {
-            c->scanline = mips_accels[i].scanline;
-	    c->init_y = init_y;
-	    c->step_y = step_y__generic;
-            return;
-        }
-    }
-#endif /* __mips__ */
-
     const int numFilters = sizeof(shortcuts)/sizeof(shortcut_t);
     for (int i=0 ; i<numFilters ; i++) {
         if (c->state.needs.match(shortcuts[i].filter)) {
@@ -299,7 +270,12 @@ static void pick_scanline(context_t* c)
         sp<ScanlineAssembly> a = new ScanlineAssembly(c->state.needs, 
                 ASSEMBLY_SCRATCH_SIZE);
         // initialize our assembler
+#if defined(__arm__)
         GGLAssembler assembler( new ARMAssembler(a) );
+#endif
+#if defined(__mips__)
+        GGLAssembler assembler( new MIPSAssembler(a) );
+#endif
         //GGLAssembler assembler(
         //        new ARMAssemblerOptimizer(new ARMAssembler(a)) );
         // generate the scanline code for the given needs
@@ -308,6 +284,9 @@ static void pick_scanline(context_t* c)
             // finally, cache this assembly
             err = gCodeCache.cache(a->key(), a);
         }
+	else {
+            LOGE("error generating assembly. 0x%x", err);
+	}
         if (ggl_unlikely(err)) {
             LOGE("error generating or caching assembly. Reverting to NOP.");
             c->scanline = scanline_noop;
@@ -1530,14 +1509,20 @@ extern "C" void ggl_test_codegen(uint32_t n, uint32_t p, uint32_t t0, uint32_t t
     needs.t[0] = t0;
     needs.t[1] = t1;
     sp<ScanlineAssembly> a(new ScanlineAssembly(needs, ASSEMBLY_SCRATCH_SIZE));
+#if defined(__arm__)
     GGLAssembler assembler( new ARMAssembler(a) );
+#elif defined(__mips__)
+    GGLAssembler assembler( new MIPSAssembler(a) );
+#else
+#error "No GGLAssember support for this architecture"
+#endif
     int err = assembler.scanline(needs, (context_t*)c);
     if (err != 0) {
         printf("error %08x (%s)\n", err, strerror(-err));
     }
     gglUninit(c);
 #else
-    printf("This test runs only on ARM\n");
+    printf("This test doesn't run on this architecture\n");
 #endif
 }
 
