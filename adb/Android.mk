@@ -111,6 +111,7 @@ LOCAL_SRC_FILES := \
 	services.c \
 	file_sync_service.c \
 	jdwp_service.c \
+	gdb_service.c \
 	framebuffer_service.c \
 	remount_service.c \
 	usb_linux_client.c \

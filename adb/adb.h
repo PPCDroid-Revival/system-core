@@ -280,6 +280,7 @@ asocket *host_service_to_socket(const char*  name, const char *serial);
 
 #if !ADB_HOST
 int       init_jdwp(void);
+int       init_gdb(void);
 asocket*  create_jdwp_service_socket();
 asocket*  create_jdwp_tracker_service_socket();
 int       create_jdwp_connection_fd(int  jdwp_pid);

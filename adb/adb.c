@@ -928,6 +928,7 @@ int adb_main(int is_daemon)
         local_init();
     }
     init_jdwp();
+    init_gdb();
 #endif
 
     if (is_daemon)
