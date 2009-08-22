@@ -598,19 +598,28 @@ void GGLAssembler::mul_factor_add(  component_t& d,
         as = ms;
     }
 
-    int temp = d.reg;
-    MUL(temp, v.reg, f.reg);
     if (ms == as) {
-	ADDU(d.reg, temp, add.reg);
-    }
-    else if (ms>as) {
-        SLL(at, add.reg, ms-as);
-        ADDU(d.reg, temp, at);
-    }
-    else /* if (ms<as) */ {
-        // not sure if we should expand the mul instead?
-        SRL(at, add.reg, as-ms);
-        ADDU(d.reg, temp, at);
+        MUL(at, v.reg, f.reg);
+        ADDU(d.reg, at, add.reg);
+    } else {
+        int temp = d.reg;
+        if (temp == add.reg) {
+            // the mul will modify add.reg, we need an intermediary reg
+            if (v.flags & CORRUPTIBLE)      temp = v.reg;
+            else if (f.flags & CORRUPTIBLE) temp = f.reg;
+            else                            temp = scratches.obtain();
+        }
+
+        MUL(temp, v.reg, f.reg);
+
+        if (ms>as) {
+            SLL(at, add.reg, ms-as);
+            ADDU(d.reg, temp, at);
+        } else if (ms<as) {
+            // not sure if we should expand the mul instead?
+            SRL(at, add.reg, as-ms);
+            ADDU(d.reg, temp, at);
+        }
     }
 
     d.h = ms;
