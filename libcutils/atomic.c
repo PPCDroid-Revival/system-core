@@ -105,7 +105,7 @@ int64_t android_quasiatomic_read_64(volatile int64_t* addr) {
 
 
 /*****************************************************************************/
-#elif defined(__i386__) || defined(__x86_64__)
+#elif defined(__i386__) || defined(__x86_64__) || defined(__powerpc__)
 
 void android_atomic_write(int32_t value, volatile int32_t* addr) {
     int32_t oldValue;
@@ -162,6 +162,7 @@ int32_t android_atomic_swap(int32_t value, volatile int32_t* addr) {
     return oldValue;
 }
 
+#if defined(__i386__) || defined(__x86_64__)
 int android_atomic_cmpxchg(int32_t oldvalue, int32_t newvalue, volatile int32_t* addr) {
     int xchg;
     asm volatile
@@ -174,6 +175,11 @@ int android_atomic_cmpxchg(int32_t oldvalue, int32_t newvalue, volatile int32_t*
     );
     return xchg;
 }
+#else
+int android_atomic_cmpxchg(int32_t oldvalue, int32_t newvalue, volatile int32_t* addr) {
+    return 0;
+}
+#endif
 
 #define NEED_QUASIATOMICS 1
 

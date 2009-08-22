@@ -801,7 +801,7 @@ int main(int argc, char **argv)
 
     act.sa_handler = sigchld_handler;
     act.sa_flags = SA_NOCLDSTOP;
-#ifdef __mips__
+#if defined(__mips__) || defined(__powerpc__)
     sigemptyset(&act.sa_mask);
 #else
     act.sa_mask = 0;
