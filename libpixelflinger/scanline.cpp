@@ -56,20 +56,13 @@
 #   define ANDROID_CODEGEN      ANDROID_CODEGEN_GENERATED
 #endif
 
-#if defined(__arm__)
-#   define ANDROID_ARM_CODEGEN  1
+#if defined(__arm__) || defined(__mips__)
+#   define ANDROID_ARCH_CODEGEN  1
 #else
-#   define ANDROID_ARM_CODEGEN  0
+#   define ANDROID_ARCH_CODEGEN  0
 #endif
 
 #define DEBUG__CODEGEN_ONLY     0
-
-//---
-#undef ANDROID_ARM_CODEGEN
-#define ANDROID_ARM_CODEGEN 1
-#undef ANDROID_CODEGEN
-#define ANDROID_CODEGEN ANDROID_CODEGEN_ASM
-//---
 
 #define ASSEMBLY_SCRATCH_SIZE   2048
 
@@ -161,7 +154,7 @@ static  const needs_filter_t fill16noblend = {
 
 // ----------------------------------------------------------------------------
 
-#if ANDROID_ARM_CODEGEN
+#if ANDROID_ARCH_CODEGEN
 #if defined(__mips__)
 // Code on MIPS isn't that much bigger, I just wanted to cache more of
 // it since we are running more complex and larger systems.
@@ -192,7 +185,7 @@ void ggl_uninit_scanline(context_t* c)
 {
     if (c->state.buffers.coverage)
         free(c->state.buffers.coverage);
-#if ANDROID_ARM_CODEGEN
+#if ANDROID_ARCH_CODEGEN
     if (c->scanline_as)
         c->scanline_as->decStrong(c);
 #endif
@@ -260,7 +253,7 @@ static void pick_scanline(context_t* c)
     c->init_y = init_y;
     c->step_y = step_y__generic;
 
-#if ANDROID_ARM_CODEGEN
+#if ANDROID_ARCH_CODEGEN
     // we're going to have to generate some code...
     // here, generate code for our pixel pipeline
     const AssemblyKey<needs_t> key(c->state.needs);
@@ -334,7 +327,7 @@ static void blend_factor(context_t* c, pixel_t* r, uint32_t factor,
         const pixel_t* src, const pixel_t* dst);
 static void rescale(uint32_t& u, uint8_t& su, uint32_t& v, uint8_t& sv);
 
-#if ANDROID_ARM_CODEGEN && (ANDROID_CODEGEN == ANDROID_CODEGEN_GENERATED)
+#if ANDROID_ARCH_CODEGEN && (ANDROID_CODEGEN == ANDROID_CODEGEN_GENERATED)
 
 // no need to compile the generic-pipeline, it can't be reached
 void scanline(context_t*)
@@ -809,7 +802,7 @@ discard:
 	}
 }
 
-#endif // ANDROID_ARM_CODEGEN && (ANDROID_CODEGEN == ANDROID_CODEGEN_GENERATED)
+#endif // ANDROID_ARCH_CODEGEN && (ANDROID_CODEGEN == ANDROID_CODEGEN_GENERATED)
 
 // ----------------------------------------------------------------------------
 #if 0
@@ -1500,7 +1493,7 @@ void rect_memcpy(context_t* c, size_t yc)
 using namespace android;
 extern "C" void ggl_test_codegen(uint32_t n, uint32_t p, uint32_t t0, uint32_t t1)
 {
-#if ANDROID_ARM_CODEGEN
+#if ANDROID_ARCH_CODEGEN
     GGLContext* c;
     gglInit(&c);
     needs_t needs;
