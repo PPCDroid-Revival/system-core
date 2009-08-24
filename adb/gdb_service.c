@@ -24,10 +24,11 @@ struct GdbProcess {
     GdbProcess*  next;
     GdbProcess*  prev;
     int           pid;
+    int		  port;
     int           socket;
     fdevent*      fde;
 
-    char          in_buff[4];  /* input character to read PID */
+    char          in_buff[8];  /* input character to read PID */
     int           in_len;      /* number from GDBed process    */
 
 };
@@ -62,7 +63,6 @@ static void
 gdb_process_free( GdbProcess*  proc )
 {
     if (proc) {
-        int  n;
 
         proc->prev->next = proc->next;
         proc->next->prev = proc->prev;
@@ -78,6 +78,7 @@ gdb_process_free( GdbProcess*  proc )
             proc->fde = NULL;
         }
         proc->pid = -1;
+	proc->port = -1;
 
         free(proc);
     }
@@ -135,9 +136,9 @@ gdb_process_event( int  socket, unsigned  events, void*  _proc )
 
     if (events & FDE_READ) {
         if (proc->pid < 0) {
-            /* read the PID as a 4-hexchar string */
+            /* read the PID & port no  as a two 4-hexchar string */
             char*  p    = proc->in_buff + proc->in_len;
-            int    size = 4 - proc->in_len;
+            int    size = 8 - proc->in_len;
             char   temp[5];
             while (size > 0) {
                 int  len = recv( socket, p, size, 0 );
@@ -160,12 +161,12 @@ gdb_process_event( int  socket, unsigned  events, void*  _proc )
                 proc->in_len += len;
                 size         -= len;
             }
-            /* we have read 4 characters, now decode the pid */
-            memcpy(temp, proc->in_buff, 4);
-            temp[4] = 0;
+            /* we have read 8 characters, now decode the pid */
+            memcpy(temp, proc->in_buff, 8);
+            temp[8] = 0;
 
-            if (sscanf( temp, "%04x", &proc->pid ) != 1) {
-                D("could not decode GDB %p PID number: '%s'\n", proc, temp);
+            if (sscanf( temp, "%04x%04x", &proc->pid, &proc->port ) != 2) {
+                D("could not decode GDB %p PID or PORT number: '%s'\n", proc, temp);
                 goto CloseProcess;
             }
 	    gdb_run_gdbserver(proc);
@@ -327,6 +328,7 @@ static void gdb_run_gdbserver(GdbProcess *proc)
 {
 	char const *gdbserver_args[5];
 	char pidbuf[16];
+	char portbuf[16];
 	int rc;
 
         rc = fork();
@@ -336,8 +338,9 @@ static void gdb_run_gdbserver(GdbProcess *proc)
         }
         if ( rc == 0 ) {
                 sprintf(pidbuf,"%d",proc->pid);
+                sprintf(portbuf,":%d",proc->port);
                 gdbserver_args[0]="/system/bin/gdbserver";
-                gdbserver_args[1]=":10000";
+                gdbserver_args[1]=portbuf;
                 gdbserver_args[2]="--attach";
                 gdbserver_args[3]=pidbuf;
                 gdbserver_args[4]=0;
