@@ -175,7 +175,29 @@ int android_atomic_cmpxchg(int32_t oldvalue, int32_t newvalue, volatile int32_t*
     );
     return xchg;
 }
+
+#elif defined(__powerpc__)
+
+int android_atomic_cmpxchg(int32_t oldvalue, int32_t newvalue, volatile int32_t* addr)
+{
+        int xchg;
+
+        asm volatile (
+"1:     lwarx   %0,0,%2\n"
+"       cmpw    0,%0,%3\n"
+"       bne-    2f\n"
+"       stwcx.  %4,0,%2\n"
+"       bne-    1b\n"
+"2:"
+	: "=&r" (xchg), "+m" (*addr)
+        : "r" (addr), "r" (oldvalue), "r" (newvalue)
+        : "cc", "memory");
+
+        return xchg != oldvalue;
+}
+
 #else
+#error Missing android_atomic_cmpxchg
 int android_atomic_cmpxchg(int32_t oldvalue, int32_t newvalue, volatile int32_t* addr) {
     return 0;
 }
