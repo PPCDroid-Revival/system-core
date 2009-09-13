@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <dirent.h>
+#include <endian.h>
 
 static int verbose = 0;
 
@@ -42,10 +43,10 @@ const char *ipaddr(unsigned addr)
     static char buf[32];
     
     sprintf(buf,"%d.%d.%d.%d", 
-            addr & 255,
-            ((addr >> 8) & 255),
+            (addr >> 24),
             ((addr >> 16) & 255), 
-            (addr >> 24));
+            ((addr >> 8) & 255),
+            addr & 255);
     return buf;
 }
 
@@ -62,6 +63,9 @@ int dump_interface(const char *name)
     if(ifc_get_info(name, &addr, &mask, &flags)) {
         return 0;
     }
+
+    addr = ntohl(addr);
+    mask = ntohl(mask);
 
     printf("%-8s %s  ", name, flags & 1 ? "UP  " : "DOWN");
     printf("%-16s", ipaddr(addr));
