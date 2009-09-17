@@ -26,7 +26,7 @@
 #include "mmc.h"
 #include "media.h"
 
-#define DEBUG_BOOTSTRAP 1
+#define DEBUG_BOOTSTRAP 0
 
 static int mmc_bootstrap_controller(char *sysfs_path);
 static int mmc_bootstrap_card(char *sysfs_path);
@@ -64,12 +64,12 @@ int mmc_bootstrap()
 
     closedir(d);
 #else
-        char tmp[255];
+    char tmp[255];
 
-	strcpy(tmp, "/sys/block/sdb");
+    strcpy(tmp, "/sys/block/sdb");
 
-        if (mmc_bootstrap_controller(tmp))
-            LOG_ERROR("Error bootstrapping controller '%s' (%m)", tmp);
+    if (mmc_bootstrap_controller(tmp))
+        LOG_ERROR("Error bootstrapping controller '%s' (%m)", tmp);
 #endif
 
     return 0;

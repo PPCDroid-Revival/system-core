@@ -83,7 +83,7 @@ int blkdev_refresh(blkdev_t *blk)
      * Open the disk partition table
      */
     devpath = blkdev_get_devpath(blk->disk);
-LOG_VOL("blkdev_refresh: devpath %s\n", devpath);
+    LOGI("blkdev_refresh: devpath %s\n", devpath);
     if ((fd = open(devpath, O_RDONLY)) < 0) {
         LOGE("Unable to open device '%s' (%s)", devpath,
              strerror(errno));
@@ -104,7 +104,7 @@ LOG_VOL("blkdev_refresh: devpath %s\n", devpath);
      * a partition so get the partition type
      */
 
-LOG_VOL("blkdev_refresh: blk type %d\n", blk->type);
+    LOGI("blkdev_refresh: blk type %d\n", blk->type);
     if (blk->type == blkdev_disk) {
         blk->nr_parts = 0;
 

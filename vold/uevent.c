@@ -28,7 +28,7 @@
 #include "volmgr.h"
 #include "media.h"
 
-#define DEBUG_UEVENT 1
+#define DEBUG_UEVENT 0
 
 #define UEVENT_PARAMS_MAX 32
 
@@ -412,7 +412,7 @@ static int handle_mmc_event(struct uevent *event)
         if (strcmp(type, "SD") && strcmp(type, "MMC"))
             return 0;
         
-LOGI("handle_mmc_event: path %s\n", event->path);
+        LOGI("handle_mmc_event: path %s\n", event->path);
 #ifndef BOARD_USES_HMP_VOLD_HACK
         read_sysfs_var(serial, sizeof(serial), event->path, "serial");
 #else

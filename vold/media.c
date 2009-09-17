@@ -94,13 +94,13 @@ media_t *media_lookup_by_path(char *devpath, boolean fuzzy_match)
 {
     media_list_t *list_scan = list_root;
 
-LOG_VOL("media_lookup_by_path(0): %s\n", devpath);
+    LOGI("media_lookup_by_path(0): %s\n", devpath);
     while (list_scan) {
         if (fuzzy_match) {
             if (!strncmp(list_scan->media->devpath, devpath, strlen(devpath)))
                 return list_scan->media;
         } else {
-LOG_VOL("media_lookup_by_path(1): %s\n", list_scan->media->devpath);
+            LOGI("media_lookup_by_path(1): %s\n", list_scan->media->devpath);
             if (!strcmp(list_scan->media->devpath, devpath))
                 return list_scan->media;
         }

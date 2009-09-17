@@ -34,7 +34,7 @@
 #include "vold.h"
 #include "devmapper.h"
 
-#define DEBUG_DEVMAPPER 1
+#define DEBUG_DEVMAPPER 0
 
 static void *_align(void *ptr, unsigned int a)
 {

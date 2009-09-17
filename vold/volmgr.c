@@ -37,7 +37,7 @@
 #include "volmgr_ext3.h"
 #include "volmgr_vfat.h"
 
-#define DEBUG_VOLMGR 1
+#define DEBUG_VOLMGR 0
 
 static volume_t *vol_root = NULL;
 static boolean safe_mode = true;
@@ -810,9 +810,9 @@ static int volmgr_readconfig(char *cfg_path)
     config_load_file(root, cfg_path);
     node = root->first_child;
 
-LOGI("volmgr_readconfig: path %s, node %08x\n", cfg_path, node);
+    LOGI("volmgr_readconfig: path %s, node %08x\n", cfg_path, node);
     while (node) {
-LOGI("volmgr_readconfig: node %s\n", node->name);
+        LOGI("volmgr_readconfig: node %s\n", node->name);
         if (!strncmp(node->name, "volume_", 7))
             volmgr_config_volume(node);
         else
@@ -982,7 +982,7 @@ static volume_t *volmgr_lookup_volume_by_mountpoint(char *mount_point, boolean l
 {
     volume_t *v = vol_root;
 
-LOGI("volmgr_lookup_volume_by_mountpoint: %s\n", mount_point);
+    LOGI("volmgr_lookup_volume_by_mountpoint: %s\n", mount_point);
     while(v) {
         pthread_mutex_lock(&v->lock);
         if (!strcmp(v->mount_point, mount_point)) {

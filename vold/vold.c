@@ -63,7 +63,7 @@ int main(int argc, char **argv)
     int uevent_sz = 64 * 1024;
 
 #ifdef __mips__
-	sleep(5);	/* Wait for the HMP SD/USB to initialize */
+    sleep(5);	/* Wait for the HMP SD/USB to initialize */
 #endif
     LOGI("Android Volume Daemon version %d.%d", ver_major, ver_minor);
 
