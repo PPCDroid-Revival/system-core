@@ -23,6 +23,7 @@
 #include "volmgr.h"
 #include "volmgr_vfat.h"
 #include "logwrapper.h"
+#include "format.h"
 
 #define VFAT_DEBUG 0
 
@@ -34,6 +35,11 @@ int vfat_identify(blkdev_t *dev)
     LOG_VOL("vfat_identify(%d:%d):", dev->major, dev->minor);
 #endif
     return 0; // XXX: Implement
+}
+
+const char *vfat_parttype(blkdev_t *dev)
+{
+    return FORMAT_TYPE_FAT32;
 }
 
 int vfat_check(blkdev_t *dev)

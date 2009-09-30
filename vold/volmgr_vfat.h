@@ -26,4 +26,5 @@
 int vfat_identify(blkdev_t *blkdev);
 int vfat_check(blkdev_t *blkdev);
 int vfat_mount(blkdev_t *blkdev, volume_t *vol, boolean safe_mode);
+const char *vfat_parttype(blkdev_t *blkdev);
 #endif

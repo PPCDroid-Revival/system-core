@@ -228,7 +228,7 @@ int send_msg(char* message)
 int send_msg_with_data(char *message, char *data)
 {
     int result = -1;
-
+    LOGI("Send :%s, data: %s",message,data);
     char* buffer = (char *)alloca(strlen(message) + strlen(data) + 1);
     if (!buffer) {
         LOGE("alloca failed in send_msg_with_data");

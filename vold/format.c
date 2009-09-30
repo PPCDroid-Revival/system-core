@@ -34,33 +34,35 @@ int format_partition(blkdev_t *part, char *type)
     char *devpath;
     int rc = -EINVAL;
 
-    devpath = blkdev_get_devpath(part);
-
-    if (!strcmp(type, FORMAT_TYPE_FAT32)) {
-        char *args[9];
-        args[0] = MKDOSFS_PATH;
-        args[1] = "-F";
-        args[2] = "32";
-        args[3] = "-c";
-        args[4] = "16";
-        args[5] = "-O";
-        args[6] = "android";
-        args[7] = devpath;
-        args[8] = NULL;
-        rc = logwrap(8, args, 1);
-    } else {
-        char *args[7];
-        args[0] = MKE2FS_PATH;
-        args[1] = "-b 4096";
-        args[2] = "-m 1";
-        args[3] = "-L android";
-        args[4] = "-v";
-        args[5] = devpath;
-        args[6] = NULL;
-        rc = logwrap(6, args, 1);
-    }
+    if (strcmp(type,FORMAT_TYPE_UNKNOWN)){
+        devpath = blkdev_get_devpath(part);
+        LOGI("format :%s",devpath);
+        if (!strcmp(type, FORMAT_TYPE_FAT32)) {
+            char *args[9];
+            args[0] = MKDOSFS_PATH;
+            args[1] = "-F";
+            args[2] = "32";
+            args[3] = "-c";
+            args[4] = "16";
+            args[5] = "-O";
+            args[6] = "android";
+            args[7] = devpath;
+            args[8] = NULL;
+            rc = logwrap(8, args, 1);
+        } else {
+            char *args[7];
+            args[0] = MKE2FS_PATH;
+            args[1] = "-b 4096";
+            args[2] = "-m 1";
+            args[3] = "-L android";
+            args[4] = "-v";
+            args[5] = devpath;
+            args[6] = NULL;
+            rc = logwrap(6, args, 1);
+        }
  
-    free(devpath);
+        free(devpath);
+    }
 
     if (rc == 0) {
         LOG_VOL("Filesystem formatted OK");

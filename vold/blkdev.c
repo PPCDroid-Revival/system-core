@@ -33,7 +33,7 @@
 #include "blkdev.h"
 #include "diskmbr.h"
 
-#define DEBUG_BLKDEV 0
+#define DEBUG_BLKDEV 1
 
 static blkdev_list_t *list_root = NULL;
 
@@ -117,17 +117,23 @@ int blkdev_refresh(blkdev_t *blk)
         for (i = 0; i < 4; i++) {
             struct dos_partition part;
 
-            dos_partition_dec(block + DOSPARTOFF + i * sizeof(struct dos_partition), &part);
+            dos_partition_dec(block + DOSPARTOFF +
+                              i * sizeof(struct dos_partition), &part);
             if (part.dp_flag != 0 && part.dp_flag != 0x80) {
-                struct fat_boot_sector *fb = (struct fat_boot_sector *) &block[0];
+                struct fat_boot_sector *fb =
+                    (struct fat_boot_sector *) &block[0];
              
-                if (!i && fb->reserved && fb->fats && fat_valid_media(fb->media)) {
+                if (!i && fb->reserved && fb->fats &&
+                    fat_valid_media(fb->media)) {
                     LOGI("Detected FAT filesystem in partition table");
                     break;
                 } else {
                     LOGI("Partition table looks corrupt");
                     break;
                 }
+            } else {
+                LOGI(" The dp_flag does not match expect value:%d",
+                     part.dp_flag);
             }
             if (part.dp_size != 0 && part.dp_typ != 0)
                 blk->nr_parts++;
@@ -311,8 +317,10 @@ int blkdev_get_num_pending_partitions(blkdev_t *blk)
     struct blkdev_list *list_scan = list_root;
     int num = blk->nr_parts;
 
-    if (blk->type != blkdev_disk)
+    if (blk->type != blkdev_disk ) {
+        LOGI("wrong blk->type want:%d, has:%d",blkdev_disk,blk->type);
         return -EINVAL;
+    }
 
     while (list_scan) {
         if (list_scan->dev->type != blkdev_partition)

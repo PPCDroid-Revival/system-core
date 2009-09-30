@@ -29,13 +29,12 @@
 #include "volmgr.h"
 #include "volmgr_ext3.h"
 #include "logwrapper.h"
+#include "format.h"
 
-
-#define EXT_DEBUG 0
+#define EXT_DEBUG 1
 
 static char E2FSCK_PATH[] = "/system/bin/e2fsck";
-
-int ext_identify(blkdev_t *dev)
+static int ext_get_parttype(blkdev_t *dev)
 {
     int rc = -1;
     int fd;
@@ -43,7 +42,7 @@ int ext_identify(blkdev_t *dev)
     char *devpath;
 
 #if EXT_DEBUG
-    LOG_VOL("ext_identify(%d:%d):", dev-major, dev->minor);
+    LOG_VOL("ext_identify(%d:%d):", dev->major, dev->minor);
 #endif
 
     devpath = blkdev_get_devpath(dev);
@@ -66,12 +65,9 @@ int ext_identify(blkdev_t *dev)
         rc =  -errno;
         goto out;
     }
+    rc = sb.s_magic;
+    return rc;
 
-    if (sb.s_magic == EXT2_SUPER_MAGIC ||
-        sb.s_magic == EXT3_SUPER_MAGIC)
-        rc = 0;
-    else
-        rc = -ENODATA;
 
  out:
 #if EXT_DEBUG
@@ -80,15 +76,34 @@ int ext_identify(blkdev_t *dev)
     free(devpath);
     close(fd);
     return rc;
+
+}
+const char *ext_parttype(blkdev_t *dev)
+{
+    int rc = ext_get_parttype(dev);
+    if (rc == EXT2_SUPER_MAGIC)
+        return FORMAT_TYPE_EXT2;
+    else if (rc == EXT3_SUPER_MAGIC)
+        return FORMAT_TYPE_EXT3;
+    else
+        return FORMAT_TYPE_UNKNOWN;
+}
+
+int ext_identify(blkdev_t *dev)
+{
+    int rc = ext_get_parttype(dev);
+    if (rc == EXT2_SUPER_MAGIC ||
+        rc == EXT3_SUPER_MAGIC)
+        rc = 0;
+    else
+        rc = -ENODATA;
+    return rc;
 }
 
 int ext_check(blkdev_t *dev)
 {
     char *devpath;
 
-#if EXT_DEBUG
-    LOG_VOL("ext_check(%s):", dev->dev_fspath);
-#endif
 
     devpath = blkdev_get_devpath(dev);
 
@@ -134,7 +149,7 @@ int ext_check(blkdev_t *dev)
 int ext_mount(blkdev_t *dev, volume_t *vol, boolean safe_mode)
 {
 #if EXT_DEBUG
-    LOG_VOL("ext_mount(%s, %s, %d):", dev->dev_fspath, vol->mount_point, safe_mode);
+    LOG_VOL("ext_mount(%s, %d):",  vol->mount_point, safe_mode);
 #endif
 
     char *fs[] = { "ext3", "ext2", NULL };
@@ -154,7 +169,7 @@ int ext_mount(blkdev_t *dev, volume_t *vol, boolean safe_mode)
                 vol->mount_point, safe_mode);
         flags |= MS_REMOUNT;
     }
- 
+
     char **f;
     for (f = fs; *f != NULL; f++) {
         rc = mount(devpath, vol->mount_point, *f, flags, NULL);

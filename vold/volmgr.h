@@ -82,6 +82,7 @@ struct volmgr_fstable_entry {
     int     (*identify_fn) (blkdev_t *dev);
     int     (*check_fn) (blkdev_t *dev);
     int     (*mount_fn) (blkdev_t *dev, struct volume *vol, boolean safe_mode);
+    const char *    (*parttype_fn)(blkdev_t *dev);
     boolean case_sensitive_paths;
 };
 
@@ -98,7 +99,7 @@ struct volmgr_reaper_args {
 #define VOLMGR_MAX_MEDIAPATHS_PER_VOLUME 8
 
 typedef struct volume {
-    char            *media_paths[VOLMGR_MAX_MEDIAPATHS_PER_VOLUME];
+    char              *media_paths[VOLMGR_MAX_MEDIAPATHS_PER_VOLUME];
 
     media_type_t      media_type;
     char              *mount_point;
@@ -118,7 +119,6 @@ typedef struct volume {
     pthread_mutex_t          worker_sem;
 
     struct volmgr_fstable_entry *fs;
-
     struct volume            *next;
 } volume_t;
 
