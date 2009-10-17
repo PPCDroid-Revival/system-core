@@ -1,7 +1,6 @@
 on boot
     setprop ARGH ARGH
     setprop net.eth0.dns1 10.0.2.3
-    setprop net.gprs.local-ip 10.0.2.15
     setprop ro.radio.use-ppp no
     setprop ro.build.product generic
     setprop ro.product.device generic
@@ -34,6 +33,8 @@ on boot
 # additionally have a hosted account.  No other configuration is
 # supported, and arbitrary breakage may result if you specify
 # something else.
+
+service ethmonitor /system/bin/ethmonitor eth0
 
 service goldfish-setup /system/etc/init.goldfish.sh
     oneshot
