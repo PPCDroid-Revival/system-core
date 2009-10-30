@@ -40,6 +40,11 @@
 #include "codeflinger-mips/GGLAssembler.h"
 #include "codeflinger-mips/MIPSAssembler.h"
 #endif
+#if defined(__powerpc__)
+#include "codeflinger-ppc/CodeCache.h"
+#include "codeflinger-ppc/GGLAssembler.h"
+#include "codeflinger-ppc/PPCAssembler.h"
+#endif
 
 // ----------------------------------------------------------------------------
 
@@ -56,7 +61,7 @@
 #   define ANDROID_CODEGEN      ANDROID_CODEGEN_GENERATED
 #endif
 
-#if defined(__arm__) || defined(__mips__)
+#if defined(__arm__) || defined(__mips__) || defined (__powerpc__)
 #   define ANDROID_ARCH_CODEGEN  1
 #else
 #   define ANDROID_ARCH_CODEGEN  0
@@ -155,7 +160,7 @@ static  const needs_filter_t fill16noblend = {
 // ----------------------------------------------------------------------------
 
 #if ANDROID_ARCH_CODEGEN
-#if defined(__mips__)
+#if defined(__mips__) || defined(__powerpc__)
 // Code on MIPS isn't that much bigger, I just wanted to cache more of
 // it since we are running more complex and larger systems.
 static CodeCache gCodeCache(24 * 1024);
@@ -268,6 +273,9 @@ static void pick_scanline(context_t* c)
 #endif
 #if defined(__mips__)
         GGLAssembler assembler( new MIPSAssembler(a) );
+#endif
+#if defined(__powerpc__)
+        GGLAssembler assembler( new PPCAssembler(a) );
 #endif
         //GGLAssembler assembler(
         //        new ARMAssemblerOptimizer(new ARMAssembler(a)) );
@@ -1506,6 +1514,8 @@ extern "C" void ggl_test_codegen(uint32_t n, uint32_t p, uint32_t t0, uint32_t t
     GGLAssembler assembler( new ARMAssembler(a) );
 #elif defined(__mips__)
     GGLAssembler assembler( new MIPSAssembler(a) );
+#elif defined(__powerpc__)
+    GGLAssembler assembler( new PPCAssembler(a) );
 #else
 #error "No GGLAssember support for this architecture"
 #endif

@@ -42,6 +42,18 @@ PIXELFLINGER_SRC_FILES:= \
     codeflinger-mips/texturing.cpp \
     codeflinger-mips/disassem.c
 endif
+ifeq ($(TARGET_ARCH),ppc)
+PIXELFLINGER_SRC_FILES:= \
+    codeflinger-ppc/PPCAssemblerInterface.cpp \
+    codeflinger-ppc/PPCAssemblerProxy.cpp \
+    codeflinger-ppc/PPCAssembler.cpp \
+    codeflinger-ppc/CodeCache.cpp \
+    codeflinger-ppc/GGLAssembler.cpp \
+    codeflinger-ppc/load_store.cpp \
+    codeflinger-ppc/blending.cpp \
+    codeflinger-ppc/texturing.cpp \
+    codeflinger-ppc/disassem.c
+endif
 
 PIXELFLINGER_SRC_FILES += \
 	tinyutils/SharedBuffer.cpp \
