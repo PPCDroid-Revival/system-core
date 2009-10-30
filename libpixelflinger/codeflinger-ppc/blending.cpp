@@ -319,7 +319,7 @@ void GGLAssembler::build_blend_factor(
 			LIS(r0, (fact_mask >> 16));
 		else
 			LI(r0, fact_mask);
-                SUB(factor.reg, factor.reg, r0);
+                SUB(factor.reg, r0, factor.reg);
                 mBlendFactorCached = f;
                 return;
             }
@@ -392,7 +392,7 @@ void GGLAssembler::build_blend_factor(
 		LIS(r0, (fact_mask >> 16));
 	else
 		LI(r0, fact_mask);
-	SUB(factor.reg, factor.reg, r0);
+	SUB(factor.reg, r0, factor.reg);
     }
 
     // don't need more than 8-bits for the blend factor
