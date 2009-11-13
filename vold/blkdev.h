@@ -61,4 +61,8 @@ void blkdev_destroy(blkdev_t *blk);
 
 int blkdev_get_num_pending_partitions(blkdev_t *blk);
 int blkdev_refresh(blkdev_t *blk);
+
+#define MMC_MAX_PARTITION_NUMBER 8
+#define SCSI_MAX_PARTITION_NUMBER 16
+
 #endif

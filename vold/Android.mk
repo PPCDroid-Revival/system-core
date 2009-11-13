@@ -7,7 +7,8 @@ LOCAL_SRC_FILES:=                \
                   cmd_dispatch.c \
                   uevent.c       \
                   mmc.c          \
-		  misc.c         \
+                  usbdrive.c     \
+                  misc.c         \
                   blkdev.c       \
                   ums.c          \
                   geom_mbr_enc.c \

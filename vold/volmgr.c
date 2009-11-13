@@ -92,33 +92,53 @@ static void volmgr_uncage_reaper(volume_t *vol, void (* cb) (volume_t *, void *a
 static void volmgr_reaper_thread_sighandler(int signo);
 static void volmgr_add_mediapath_to_volume(volume_t *v, char *media_path);
 static int volmgr_send_eject_request(volume_t *v);
-static volume_t *volmgr_lookup_volume_by_mountpoint(char *mount_point, boolean leave_locked);
+static volume_t *volmgr_lookup_volume_by_mountpoint(char *mount_point, boolean leave_locked, boolean checkmounted);
 
-static boolean _mountpoint_mounted(char *mp)
+static boolean _check_mounted(const char *mp, int idx)
 {
     char device[256];
     char mount_path[256];
     char rest[256];
     FILE *fp;
     char line[1024];
+    boolean ret = false;
+
+    if (mp == NULL)
+        return ret;
 
     if (!(fp = fopen("/proc/mounts", "r"))) {
         LOGE("Error opening /proc/mounts (%s)", strerror(errno));
         return false;
     }
 
-    while(fgets(line, sizeof(line), fp)) {
-        line[strlen(line)-1] = '\0';
+    while (fgets(line, sizeof(line), fp)) {
         sscanf(line, "%255s %255s %255s\n", device, mount_path, rest);
-        if (!strcmp(mount_path, mp)) {
-            fclose(fp);
-            return true;
+        if (idx == 1) {
+            char *devname = strrchr(device, '/');
+            if (!devname || strcmp(++devname, mp))
+                continue;
+        } else if (idx == 2) {
+            if (strcmp(mount_path, mp))
+                continue;
         }
-        
+
+        LOGI("%s is already mounted", mp);
+        ret = true;
+        break;
     }
 
     fclose(fp);
-    return false;
+    return ret;
+}
+
+static boolean _device_mounted(const char *mp)
+{
+    return _check_mounted(mp, 1);
+}
+
+static boolean _mountpoint_mounted(const char *mp)
+{
+    return _check_mounted(mp, 2);
 }
 
 /*
@@ -127,7 +147,7 @@ static boolean _mountpoint_mounted(char *mp)
 
 int volmgr_set_volume_key(char *mount_point, unsigned char *key)
 {
-    volume_t *v = volmgr_lookup_volume_by_mountpoint(mount_point, true);
+    volume_t *v = volmgr_lookup_volume_by_mountpoint(mount_point, true, false);
  
     if (!v)
         return -ENOENT;
@@ -150,7 +170,7 @@ int volmgr_format_volume(char *mount_point)
 
     LOG_VOL("volmgr_format_volume(%s):", mount_point);
 
-    v = volmgr_lookup_volume_by_mountpoint(mount_point, true);
+    v = volmgr_lookup_volume_by_mountpoint(mount_point, true, false);
 
     if (!v)
         return -ENOENT;
@@ -370,7 +390,7 @@ int volmgr_start_volume_by_mountpoint(char *mount_point)
 { 
     volume_t *v;
 
-    v = volmgr_lookup_volume_by_mountpoint(mount_point, true);
+    v = volmgr_lookup_volume_by_mountpoint(mount_point, true, false);
     if (!v)
         return -ENOENT;
 
@@ -407,7 +427,7 @@ int volmgr_stop_volume_by_mountpoint(char *mount_point)
     int rc;
     volume_t *v;
     LOGI("%s look for mount point: %s",__FUNCTION__,mount_point);
-    v = volmgr_lookup_volume_by_mountpoint(mount_point, true);
+    v = volmgr_lookup_volume_by_mountpoint(mount_point, true, true);
     if (!v) {
         LOGI("not found");
         return -ENOENT;
@@ -624,6 +644,10 @@ static int _volmgr_consider_disk_and_vol(volume_t *vol, blkdev_t *dev)
     const char *part_type = FORMAT_TYPE_UNKNOWN;
     struct volmgr_fstable_entry *fs = NULL;
 
+    FILE *fp;
+    char tmp[1024];
+    char *devname_partition;
+
 #if DEBUG_VOLMGR
     LOG_VOL("volmgr_consider_disk_and_vol(%s, %d:%d):", vol->mount_point,
             dev->major, dev->minor); 
@@ -682,6 +706,11 @@ static int _volmgr_consider_disk_and_vol(volume_t *vol, blkdev_t *dev)
             dev->devpath, vol->mount_point);
 
     if (dev->nr_parts == 0) {
+        sprintf(tmp, "%s1", dev->devpath);
+        if (!(devname_partition = strrchr(tmp,'/')))
+            return -ENODEV;
+        if (_device_mounted(++devname_partition))
+            return -EBUSY;
         rc = _volmgr_start(vol, dev);
 #if DEBUG_VOLMGR
         LOG_VOL("_volmgr_start(%s, %d:%d) rc = %d", vol->mount_point,
@@ -704,6 +733,12 @@ static int _volmgr_consider_disk_and_vol(volume_t *vol, blkdev_t *dev)
                      dev->major, (dev->minor + (i + 1)));
                 continue;
             }
+
+            sprintf(tmp, "%s%d", dev->devpath, i + 1);
+            if (!(devname_partition = strrchr(tmp,'/')))
+                continue;
+            if (_device_mounted(++devname_partition))
+                continue;
 
             rc = _volmgr_start(vol, part);
 #if DEBUG_VOLMGR
@@ -1108,7 +1143,7 @@ static volume_t *volmgr_lookup_volume_by_dev(blkdev_t *dev)
     return NULL;
 }
 
-static volume_t *volmgr_lookup_volume_by_mountpoint(char *mount_point, boolean leave_locked)
+static volume_t *volmgr_lookup_volume_by_mountpoint(char *mount_point, boolean leave_locked, boolean checkmounted)
 {
     volume_t *v = vol_root;
 
@@ -1116,7 +1151,8 @@ static volume_t *volmgr_lookup_volume_by_mountpoint(char *mount_point, boolean l
     while(v) {
         pthread_mutex_lock(&v->lock);
         LOGI("Match :%s: with :%s:",v->mount_point,mount_point);
-        if (!strcmp(v->mount_point, mount_point) && v->dev != NULL) {
+        if (!strcmp(v->mount_point, mount_point) && v->dev != NULL &&
+           (!checkmounted || (checkmounted && v->state == volstate_mounted))) {
             if (!leave_locked)
                 pthread_mutex_unlock(&v->lock);
             return v;

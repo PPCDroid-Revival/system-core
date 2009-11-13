@@ -29,6 +29,8 @@ enum {
 #define DEVPATH "/dev/block/"
 #define DEVPATHLENGTH 11
 
+#define SYSFS_PATH_MAX 256
+
 #define WEXITSTATUS(status) (((status) & 0xff00) >> 8)
 
 // Set this for logging error messages
@@ -82,6 +84,7 @@ int process_uevent_message(int socket);
 int simulate_uevent(char *subsystem, char *path, char *action, char **params);
 
 int mmc_bootstrap(void);
+int usb_bootstrap(void);
 int ums_bootstrap(void);
 
 int volmgr_bootstrap(void);
@@ -90,7 +93,7 @@ int switch_bootstrap(void);
 
 void *read_file(char *filename, ssize_t *_size);
 char *truncate_sysfs_path(char *path, int num_elements_to_remove, char *buffer, int buffer_size);
-char *read_sysfs_var(char *buffer, size_t maxlen, char *devpath, char *var);
+char *read_sysfs_var(char *buffer, size_t maxlen, const char *devpath, const char *var);
 
 void ums_hostconnected_set(boolean connected);
 boolean ums_hostconnected_get(void);

@@ -323,10 +323,28 @@ int blkdev_get_num_pending_partitions(blkdev_t *blk)
     }
 
     while (list_scan) {
+        char *devname;
+        int max_partition_number = SCSI_MAX_PARTITION_NUMBER;
+
         if (list_scan->dev->type != blkdev_partition)
             goto next;
 
         if (list_scan->dev->major != blk->major)
+            goto next;
+
+	/*
+	 * Make sure these partitions are in the same drive.
+	 * SD 0,16,32,...
+	 * MMC 0,8,16,...
+	 */
+	if ((devname = strrchr(blk->devpath, '/'))) {
+            devname++;
+            if (!strncmp(devname, "mmcblk", 6))
+                max_partition_number = MMC_MAX_PARTITION_NUMBER;
+            else if (!strncmp(devname, "sd", 2))
+                max_partition_number = SCSI_MAX_PARTITION_NUMBER;
+        }
+        if (list_scan->dev->minor/max_partition_number != blk->minor/max_partition_number)
             goto next;
 
         if (list_scan->dev->nr_sec != 0xffffffff &&
