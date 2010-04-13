@@ -240,5 +240,9 @@ int send_msg_with_data(char *message, char *data)
 
     strcpy(buffer, message);
     strcat(buffer, data);
-    return send_msg(buffer);
+    while (result == -1) {
+        result = send_msg(buffer);
+        sleep(1);
+    }
+    return result;
 }
