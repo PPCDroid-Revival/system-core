@@ -71,6 +71,8 @@ static void dns_service(int fd, void *cookie)
     }
     adb_mutex_unlock(&dns_lock);
     adb_close(fd);
+
+    free(hostname);	/* memory leak here */
 }
 #else
 extern int recovery_mode;
@@ -134,8 +136,9 @@ void restart_root_service(int fd, void *cookie)
     }
 }
 
-void reboot_service(int fd, char *arg)
+void reboot_service(int fd, void *cmd)
 {
+    char *arg = cmd;
     char buf[100];
     int ret;
 
@@ -146,6 +149,8 @@ void reboot_service(int fd, char *arg)
         writex(fd, buf, strlen(buf));
     }
     adb_close(fd);
+    if (arg)
+	    free(arg);
 }
 
 #endif
@@ -347,6 +352,12 @@ static void shell_service(int s, void *command)
 
     adb_close(fd);
     adb_close(s);
+
+    /* only args[1] is malloced */
+    if (args[1] != NULL)
+	    free(args[1]);
+
+    free(args);
 }
 #endif // !ADB_HOST
 
@@ -401,10 +412,11 @@ int service_to_fd(const char *name)
     } else if (!strncmp(name, "log:", 4)) {
         ret = create_service_thread(log_service, get_log_file_path(name + 4));
     } else if(!HOST && !strncmp(name, "shell:", 6)) {
-        const char* args[2];
+        char **args;
+	args = malloc(sizeof(char *) * 2);
         if(name[6]) {
             args[0] = "-c";
-            args[1] = name + 6;
+            args[1] = strdup(name + 6);
         } else {
             args[0] = "-";
             args[1] = 0;
@@ -415,9 +427,11 @@ int service_to_fd(const char *name)
     } else if(!strncmp(name, "remount:", 8)) {
         ret = create_service_thread(remount_service, NULL);
     } else if(!strncmp(name, "reboot:", 7)) {
-        char* arg = name + 7;
+        char* arg;
         if (*name == 0)
             arg = NULL;
+	else
+            arg = strdup(name + 7);
         ret = create_service_thread(reboot_service, arg);
     } else if(!strncmp(name, "root:", 5)) {
         ret = create_service_thread(restart_root_service, NULL);
