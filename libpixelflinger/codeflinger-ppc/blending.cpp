@@ -663,7 +663,8 @@ void GGLAssembler::component_sat(const component_t& v)
 	    ORI(r0, r0, one & 0xffff);
     }
     else {
-        LI(r0, one);
+        LIS(r0, one);
+	SRWI(r0, r0, 16); // To avoid sign extension
     }
     CMPW(cr7, v.reg, r0);
     BLE(cr7, loclab);

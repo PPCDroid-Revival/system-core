@@ -1045,7 +1045,7 @@ void GGLAssembler::filter32(
     CONTEXT_LOAD(offset, generated_vars.rt);
     CONTEXT_LOAD(u, generated_vars.lb);
     ADD(offset, offset, u);
-    LWBRX(r0, offset, txPtr.reg);
+    LWBRX(pixel, offset, txPtr.reg);
     MULLW(u, U, V);
     AND(temp, mask, pixel);
     if (adjust) {
@@ -1303,7 +1303,12 @@ void GGLAssembler::modulate(
                 t = scratches.obtain();
             SRWI(r0, texel.reg, Nt-1);
             ADD(t, texel.reg, r0);
-            MULLW(dest.reg, t, inReg);
+
+	    if (shift == 16) {
+		    /* The value locate in hoght part (smulbt in arm)*/
+	    	SRWI(r0, inReg, 16);
+	    }
+            MULLW(dest.reg, t, r0);
             dest.l = Nt;
             dest.h = Nt + Ni;
         }
