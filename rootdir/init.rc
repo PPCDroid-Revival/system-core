@@ -5,7 +5,7 @@ on init
 
 sysclktz 0
 
-loglevel 3
+loglevel 9
 
 # setup the global environment
     export PATH /sbin:/vendor/bin:/system/sbin:/system/bin:/system/xbin
@@ -99,7 +99,7 @@ on fs
 
 on post-fs
     # once everything is setup, no need to modify /
-    mount rootfs rootfs / ro remount
+    #mount rootfs rootfs / ro remount
 
     # We chown/chmod /data again so because mount is run as root + defaults
     chown system system /data
@@ -283,7 +283,7 @@ service ueventd /sbin/ueventd
 service console /system/bin/sh
     console
     disabled
-    user shell
+    user root
     group log
 
 on property:ro.secure=0
