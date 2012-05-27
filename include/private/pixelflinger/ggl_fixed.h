@@ -232,7 +232,7 @@ inline GGLfixed gglMulSubx(GGLfixed a, GGLfixed b, GGLfixed c) {
 inline int32_t gglClz(int32_t x) CONST;
 inline int32_t gglClz(int32_t x)
 {
-#if defined(__arm__) && !defined(__thumb__)
+#if (defined(__arm__) && !defined(__thumb__)) || defined(__powerpc__)
     return __builtin_clz(x);
 #else
     if (!x) return 32;
