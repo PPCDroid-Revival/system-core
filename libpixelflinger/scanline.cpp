@@ -2114,7 +2114,7 @@ last_one:
     while (ct >= 2) {
 #if BYTE_ORDER == BIG_ENDIAN
         s = GGL_RGBA_TO_HOST( *src++ );
-        d = convertAbgr8888ToRgb565_hi16(s);
+        d = convertAbgr8888ToRgb565(s) << 16;
 
         s = GGL_RGBA_TO_HOST( *src++ );
         d |= convertAbgr8888ToRgb565(s);
