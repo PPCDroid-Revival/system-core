@@ -43,6 +43,11 @@ ifeq ($(TARGET_ARCH),arm)
 PIXELFLINGER_CFLAGS += -fstrict-aliasing -fomit-frame-pointer
 endif
 
+ifeq ($(TARGET_ARCH),powerpc)
+# special optimization flags for pixelflinger
+PIXELFLINGER_CFLAGS += -fstrict-aliasing -fomit-frame-pointer
+endif
+
 LOCAL_SHARED_LIBRARIES := libcutils
 
 ifneq ($(TARGET_ARCH),arm)
