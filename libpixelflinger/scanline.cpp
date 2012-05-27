@@ -436,6 +436,13 @@ void scanline(context_t*)
 
 #else
 
+#define SWAP32(s)  \
+	    s = 0 \
+		    | ((s & 0xff000000) >> 24) \
+		    | ((s & 0x00ff0000) >> 8) \
+		    | ((s & 0x0000ff00) << 8) \
+		    | ((s & 0x000000ff) << 24) \
+
 void rescale(uint32_t& u, uint8_t& su, uint32_t& v, uint8_t& sv)
 {
     if (su && sv) {
@@ -1446,6 +1453,7 @@ static void scanline_t32cb16_clamp_dither(context_t* c)
         horz_clamp_iterator32 ci(c);
         while (di.count--) {
             uint32_t s = ci.get_pixel32();
+	    SWAP32(s);
             *di.dst++ = dither.abgr8888ToRgb565(s);
         }
     } else {
@@ -1453,6 +1461,7 @@ static void scanline_t32cb16_clamp_dither(context_t* c)
         clamp_iterator ci(c);
         while (di.count--) {
             uint32_t s = ci.get_pixel32();
+	    SWAP32(s);
             *di.dst++ = dither.abgr8888ToRgb565(s);
         }
     }
