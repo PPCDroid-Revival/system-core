@@ -6,6 +6,8 @@ include $(CLEAR_VARS)
 #
 
 include $(CLEAR_VARS)
+
+ifeq ($(TARGET_ARCH),arm)
 PIXELFLINGER_SRC_FILES:= \
     codeflinger/ARMAssemblerInterface.cpp \
     codeflinger/ARMAssemblerProxy.cpp \
@@ -15,7 +17,23 @@ PIXELFLINGER_SRC_FILES:= \
     codeflinger/load_store.cpp \
     codeflinger/blending.cpp \
     codeflinger/texturing.cpp \
-    codeflinger/disassem.c \
+    codeflinger/disassem.c
+endif
+
+ifeq ($(TARGET_ARCH),powerpc)
+PIXELFLINGER_SRC_FILES:= \
+    codeflinger-powerpc/PPCAssemblerInterface.cpp \
+    codeflinger-powerpc/PPCAssemblerProxy.cpp \
+    codeflinger-powerpc/PPCAssembler.cpp \
+    codeflinger-powerpc/CodeCache.cpp \
+    codeflinger-powerpc/GGLAssembler.cpp \
+    codeflinger-powerpc/load_store.cpp \
+    codeflinger-powerpc/blending.cpp \
+    codeflinger-powerpc/texturing.cpp \
+    codeflinger-powerpc/disassem.c
+endif
+
+PIXELFLINGER_SRC_FILES += \
 	tinyutils/SharedBuffer.cpp \
 	tinyutils/VectorImpl.cpp \
 	fixed.cpp.arm \
