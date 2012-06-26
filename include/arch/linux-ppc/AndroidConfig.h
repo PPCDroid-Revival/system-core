@@ -352,4 +352,8 @@
  */
 #define HAVE_PRINTF_ZD 1
 
+#define __BYTE_ORDER #error __BYTE_ORDER is undefined, please include <endian.h> header
+#define _BYTE_ORDER #error _BYTE_ORDER is undefined, please include <endian.h> header
+#define BYTE_ORDER #error BYTE_ORDER is undefined, please include <endian.h> header
+
 #endif /*_ANDROID_CONFIG_H */
