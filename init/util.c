@@ -432,6 +432,8 @@ void get_hardware_name(char *hardware, unsigned int *revision)
 
     data[n] = 0;
     hw = strstr(data, "\nHardware");
+    if (!hw)
+        hw = strstr(data, "\nplatform");
     rev = strstr(data, "\nRevision");
 
     if (hw) {
